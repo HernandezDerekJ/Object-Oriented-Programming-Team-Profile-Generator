@@ -5,27 +5,17 @@ const Engineer = require("./lib/Engineer");
 const Intern = require("./lib/Intern");
 const path = require("path");
 const fs = require("fs");
-const team = [];
-
+const teamMembers = [];
 //determine current directory and find path to the output folder 
 const OUTPUT_DIR = path.resolve(__dirname, "output")
 //where to create our output
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 //require render function from the page template
 const render = require("./src/page-template.js");
+const { async } = require("rxjs");
 
-//use inquirer to determine what kind of employee you will be adding or to exit and build html
-//based on the reponse trigger another inquire block
-// use answers to create a "new Employee" and add the employee to the 
-//teamMembers array
-//
+
 const whatToAdd = [
-  {
-    type: 'list',
-    message: 'Do you want to Auto-Generate',
-    name: 'auto',
-    choices: ['Yes', 'No']
-  },
   {
   type: 'list',
   message: 'What do you want to add',
@@ -38,16 +28,35 @@ let employeePrompt = [
     type: 'input',
     message: 'What is your Name',
     name: 'name',
+    validate: async (name) => {
+      if(!digit_or_letter(name, "Name")){
+        console.error('Invalid Input');
+        return 'Invalid Input';
+      }
+      return true;
+    }
   },
   {
     type: 'input',
     message: 'What is your Email',
     name: 'email',
+    validate: async (email) => {
+      if(!digit_or_letter(email, "Email")){
+        return 'Invalid Input';
+      }
+      return true;
+    }
   },
   {
     type: 'input',
     message: 'What is your ID',
     name: 'id',
+    validate: async (id) => {
+      if(!digit_or_letter(id, "Num")){
+        return 'Invalid Input';
+      }
+      return true;
+    }
   }
 ];
 
@@ -55,126 +64,139 @@ let managerPrompt =
   {
     type: 'input',
     message: 'What is your Office Number',
-    name: 'officeNumber'
+    name: 'officeNumber',
+    validate: async (officeNumber) => {
+      if(!digit_or_letter(officeNumber, "Num")){
+        return 'Invalid Input';
+      }
+      return true;
+    }
   };
 let engineerPrompt = 
   {
     type: 'input',
     message: 'What is your Github',
-    name: 'git'
+    name: 'git',
+    validate: async (git) => {
+      if(!digit_or_letter(git, "Email")){
+        return 'Invalid Input';
+      }
+      return true;
+    }
   };
 let internPrompt = 
   {
     type: 'input',
     message: 'What is your School',
-    name: 'school'
+    name: 'school',
+    validate: async (school) => {
+      if(!digit_or_letter(school, "Name")){
+        return 'Invalid Input';
+      }
+      return true;
+    }
   };
 let anotherPrompt = 
   {
   type: 'list',
   message: 'Do you want to add Another',
   name: 'another',
-  choices: ['Manager', 'Engineer', 'Intern', 'Other', 'No']
+  choices: ['Manager', 'Engineer', 'Intern', 'Other', 'Done Adding']
   }
 
-function digitsOnly(x){
-  var reg = /^\d+$/;
-  if (x.match(reg)){
-    return true
-  }
-  return false;
-}
-function lettersOnly(x){
+function digit_or_letter(x, type){
+  let reg = /^[0-9]+$/;
   let res = /^[a-zA-Z]+$/;
-  if (x.match(res)){
-    return true
+  let special = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+  if(type == "Name"){
+    if (!x.match(reg) && x.match(res)){
+      return true;
+    }
+  }
+  else if(type == "Num"){
+    if (x.match(reg) && !x.match(res)){
+      return true;
+    }
+  }
+  else if(type == "Email"){
+    if (x.match(special, res, reg)){
+      return true;
+    }
   }
   return false;
 }
+
 function newManager(id, email, name, officeNumber){
   const manager = new Manager(id, email, name, officeNumber);
-  team.push(manager);
+  teamMembers.push(manager);
 }
 function newEngineer(id, email, name, github){
   const engineer = new Engineer(id, email, name, github);
-  team.push(engineer);
+  teamMembers.push(engineer);
 }
 function newIntern(id, email, name, school){
   const intern = new Intern(id, email, name, school);
-  team.push(intern);
+  teamMembers.push(intern);
 }
 function newEmployee(id, email, name){
   const employee = new Employee(id, email, name);
-  team.push(employee);
+  teamMembers.push(employee);
 }
-function handleNewEmployee(x){
-  let again = null;
+ async function handleNewEmployee(x){
   switch(x) {
     case "Manager":
       employeePrompt.push(managerPrompt);
-      employeePrompt.push(anotherPrompt);
-      inquirer.prompt(employeePrompt)
+      await inquirer.prompt(employeePrompt)
       .then((r) => {
-        console.log(r);
-        again = r.another
+        newManager(r.id, r.email, r.name, r.officeNumber);
       })
       employeePrompt.pop();
-      employeePrompt.pop();
-      return again;
+      console.log("done");
+      await inquirer.prompt(anotherPrompt).then(answer => handleNewEmployee(answer.another));
+
+      break;
     case "Engineer":
       employeePrompt.push(engineerPrompt);
-      inquirer.prompt(employeePrompt)
+      await inquirer.prompt(employeePrompt)
       .then((r) => {
-        console.log(r);
+        newEngineer(r.id, r.email, r.name, r.git);
       })
       employeePrompt.pop();
+      console.log("done");
+      await inquirer.prompt(anotherPrompt).then(answer => handleNewEmployee(answer.another));
       break;
     case "Intern":
       employeePrompt.push(internPrompt);
-      inquirer.prompt(employeePrompt)
+      await inquirer.prompt(employeePrompt)
       .then((r) => {
-        console.log(r);
+        newIntern(r.id, r.email, r.name, r.school);
       })
       employeePrompt.pop();
+      console.log("done");
+      await inquirer.prompt(anotherPrompt).then(answer => handleNewEmployee(answer.another));
       break;
     case "Other":
-      inquirer.prompt(employeePrompt)
+      await inquirer.prompt(employeePrompt)
       .then((r) => {
-        console.log(r);
+        newEmployee(r.id, r.email, r.name);
       })
+      console.log("done");
+      await inquirer.prompt(anotherPrompt).then(answer => handleNewEmployee(answer.another));
       break;
-    case "No":
-      // code block
+    case "Done Adding":
+      buildTeam();
       break;
     default:
-      // code block
-    
+     //  code block
   }
+
 }
-function init() {
-  console.log(employeePrompt);
-
-  inquirer.prompt(whatToAdd)
+ async function init() {
+  await inquirer.prompt(whatToAdd)
   .then((response) => {
-    console.log(response);
-    switch(response.auto) {
-      case "Yes":
-        // code block
-        break;
-      case "No":
-        let loopControl = "Yes";
-        do {
-          loopControl = handleNewEmployee(response.addNew)
-        } while (loopControl != "No");
-        break;
-      default:
-        // code block
-    }
-
-  
+    handleNewEmployee(response.addNew);
   });
 }
-
 
   function buildTeam() {
     // Create the output directory if the output path doesn't exist
