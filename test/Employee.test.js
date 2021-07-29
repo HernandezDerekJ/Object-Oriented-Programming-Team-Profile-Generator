@@ -4,7 +4,7 @@ const Employee = require("../lib/Employee");
 test('Does the Object exist?', () => {
     const x = new Employee("1234", "woof@yahoo.com", "Woof");
     //Anything thats not NULL
-    expect(x).toBe(expect.anything());
+    expect(x).toStrictEqual(expect.anything());
   });
 // test to see if type of new employee is an object
 test('Is Employee an Object?', () => {

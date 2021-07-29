@@ -4,7 +4,7 @@ const Intern = require("../lib/Intern");
 test('Does the Intern Object exist?', () => {
     const i = new Intern("888", "derekhernandez@outlook.com", "derek", "Texas State");
     //Anything thats not NULL
-    expect(i).toBe(expect.anything());
+    expect(i).toStrictEqual(expect.anything());
   });
 //test to see if you can set school using our constructor
 test('Does Intern constructor work?', () => {

@@ -5,7 +5,7 @@ const Manager = require("../lib/Manager");
 test('Does the Manager Object exist?', () => {
     const m = new Manager("888", "derekhernandez@outlook.com", "derek", "12345");
     //Anything thats not NULL
-    expect(typeof(m)).toBe(expect.anything());
+    expect(typeof(m)).toStrictEqual(expect.anything());
   });
 
 //test to see if you can set officeNumber using our constructor
